@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: BTGS security policy
-    url: https://github.com/biigbang0001/BTGS/blob/main/SECURITY.md
+    url: https://github.com/BTGSCOINDEV/BTGS/blob/main/SECURITY.md
     about: Read how to report security-sensitive issues.
   - name: BTGS repository
-    url: https://github.com/biigbang0001/BTGS
+    url: https://github.com/BTGSCOINDEV/BTGS
     about: Source code, releases, and project information.
