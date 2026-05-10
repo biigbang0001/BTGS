@@ -47,7 +47,7 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "Bitcoin-Gold"
-#define QAPP_ORG_DOMAIN "https://bitcoingold.site"
+#define QAPP_ORG_DOMAIN "bitcoingold.site"
 #define QAPP_APP_NAME_DEFAULT "Bitcoin-Gold-Qt"
 #define QAPP_APP_NAME_TESTNET "Bitcoin-Gold-Qt-testnet"
 #define QAPP_APP_NAME_TESTNET4 "Bitcoin-Gold-Qt-testnet4"
