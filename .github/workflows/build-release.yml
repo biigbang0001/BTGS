@@ -18,6 +18,8 @@ jobs:
   linux:
     name: Linux ${{ matrix.artifact }}
     runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:22.04
     timeout-minutes: 360
 
     strategy:
@@ -34,13 +36,18 @@ jobs:
             strip: aarch64-linux-gnu-strip
 
     steps:
+      - name: Prepare Ubuntu 22.04 container
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates git
+
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
             build-essential automake bison bsdmainutils cmake curl git gperf libtool \
             ninja-build pkgconf python3 tar unzip zip ${{ matrix.packages }}
 
