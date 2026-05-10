@@ -35,17 +35,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential automake bison bsdmainutils cmake curl git libtool \
-            pkgconf python3 tar unzip zip ${{ matrix.packages }}
+            build-essential automake bison bsdmainutils cmake curl git gperf libtool \
+            ninja-build pkgconf python3 tar unzip zip ${{ matrix.packages }}
 
       - name: Cache depends
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             depends/built
@@ -80,19 +80,19 @@ jobs:
         run: |
           set -euo pipefail
           build_dir="build-${{ matrix.artifact }}"
-          pkg="btgs-${VERSION}-${{ matrix.artifact }}"
-          mkdir -p "release/${pkg}/bin" "release/${pkg}/share/rpcauth"
+          rm -rf release
+          mkdir -p release/bin
 
           copy_required() {
             src="$(find "${build_dir}" -type f -path "*/bin/$1" -print -quit)"
             test -n "${src}"
-            cp "${src}" "release/${pkg}/bin/$2"
+            cp "${src}" "release/bin/$2"
           }
 
           copy_optional() {
             src="$(find "${build_dir}" -type f -path "*/bin/$1" -print -quit)"
             if [ -n "${src}" ]; then
-              cp "${src}" "release/${pkg}/bin/$2"
+              cp "${src}" "release/bin/$2"
             fi
           }
 
@@ -104,19 +104,14 @@ jobs:
           copy_required bitcoin-wallet btgs-wallet
           copy_required bitcoin-util btgs-util
 
-          ${{ matrix.strip }} "release/${pkg}/bin/"* || true
-          cp COPYING "release/${pkg}/COPYING.txt"
-          cp README.md "release/${pkg}/README.md"
-          cp share/examples/btgs.conf "release/${pkg}/btgs.conf"
-          cp -R share/rpcauth/. "release/${pkg}/share/rpcauth/"
-
-          tar -C release -czf "release/${pkg}.tar.gz" "${pkg}"
+          ${{ matrix.strip }} release/bin/* || true
+          tar -C release -czf "release/btgs-${{ matrix.artifact }}.tar.gz" bin
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: btgs-${{ env.VERSION }}-${{ matrix.artifact }}-tar
-          path: release/btgs-${{ env.VERSION }}-${{ matrix.artifact }}.tar.gz
+          name: btgs-${{ matrix.artifact }}-tar
+          path: release/btgs-${{ matrix.artifact }}.tar.gz
           retention-days: 14
 
   windows:
@@ -126,19 +121,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential automake bison bsdmainutils cmake curl git libtool \
-            g++-mingw-w64-x86-64-posix nsis pkgconf python3 tar unzip zip
+            build-essential automake bison bsdmainutils cmake curl git gperf libtool \
+            g++-mingw-w64-x86-64-posix ninja-build nsis pkgconf python3 tar unzip zip
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 
       - name: Cache depends
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             depends/built
@@ -176,29 +171,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pkg="btgs-${VERSION}-win64"
-          mkdir -p "release/${pkg}/bin" "release/${pkg}/share/rpcauth"
-          cp build-win64/release/*.exe "release/${pkg}/bin/"
-          cp COPYING "release/${pkg}/COPYING.txt"
-          cp README.md "release/${pkg}/README.md"
-          cp share/examples/btgs.conf "release/${pkg}/btgs.conf"
-          cp -R share/rpcauth/. "release/${pkg}/share/rpcauth/"
+          rm -rf release
+          mkdir -p release/bin
+          cp build-win64/release/*.exe release/bin/
 
-          (cd release && zip -r "${pkg}.zip" "${pkg}")
-          cp build-win64/btgs-win64-setup.exe "release/btgs-${VERSION}-win64-setup.exe"
+          (cd release && zip -r "btgs-win64.zip" bin)
+          cp build-win64/btgs-win64-setup.exe "release/btgs-win64-setup.exe"
 
       - name: Upload win64 zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: btgs-${{ env.VERSION }}-win64-zip
-          path: release/btgs-${{ env.VERSION }}-win64.zip
+          name: btgs-win64-zip
+          path: release/btgs-win64.zip
           retention-days: 14
 
       - name: Upload win64 setup
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: btgs-${{ env.VERSION }}-win64-setup
-          path: release/btgs-${{ env.VERSION }}-win64-setup.exe
+          name: btgs-win64-setup
+          path: release/btgs-win64-setup.exe
           retention-days: 14
 
   macos-arm64:
@@ -208,15 +199,24 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
-          brew install automake libtool pkg-config cmake create-dmg llvm
+          install_formula() {
+            if ! brew list --formula "$1" >/dev/null 2>&1; then
+              brew install "$1"
+            fi
+          }
+
+          for formula in automake libtool pkgconf cmake create-dmg llvm ninja; do
+            install_formula "$formula"
+          done
+
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
       - name: Cache depends
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             depends/built
@@ -250,24 +250,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pkg="btgs-${VERSION}-aarch64-apple-darwin"
-          mkdir -p "release/${pkg}/bin" "release/${pkg}/share/rpcauth"
+          rm -rf release
+          mkdir -p release/bin
 
-          cp build-macos/bin/bitcoin "release/${pkg}/bin/btgs" || true
-          cp build-macos/bin/bitcoin-qt "release/${pkg}/bin/btgs-qt"
-          cp build-macos/bin/bitcoind "release/${pkg}/bin/btgsd"
-          cp build-macos/bin/bitcoin-cli "release/${pkg}/bin/btgs-cli"
-          cp build-macos/bin/bitcoin-tx "release/${pkg}/bin/btgs-tx"
-          cp build-macos/bin/bitcoin-wallet "release/${pkg}/bin/btgs-wallet"
-          cp build-macos/bin/bitcoin-util "release/${pkg}/bin/btgs-util"
+          cp build-macos/bin/bitcoin "release/bin/btgs" || true
+          cp build-macos/bin/bitcoin-qt "release/bin/btgs-qt"
+          cp build-macos/bin/bitcoind "release/bin/btgsd"
+          cp build-macos/bin/bitcoin-cli "release/bin/btgs-cli"
+          cp build-macos/bin/bitcoin-tx "release/bin/btgs-tx"
+          cp build-macos/bin/bitcoin-wallet "release/bin/btgs-wallet"
+          cp build-macos/bin/bitcoin-util "release/bin/btgs-util"
 
-          strip "release/${pkg}/bin/"* || true
-          cp COPYING "release/${pkg}/COPYING.txt"
-          cp README.md "release/${pkg}/README.md"
-          cp share/examples/btgs.conf "release/${pkg}/btgs.conf"
-          cp -R share/rpcauth/. "release/${pkg}/share/rpcauth/"
-
-          tar -C release -czf "release/${pkg}.tar.gz" "${pkg}"
+          strip release/bin/* || true
+          tar -C release -czf "release/btgs-aarch64-apple-darwin.tar.gz" bin
 
       - name: Package macOS DMG
         shell: bash
@@ -278,7 +273,7 @@ jobs:
           mkdir -p "dmg_contents/BTGS-Qt.app/Contents/Resources"
           cp build-macos/bin/bitcoin-qt "dmg_contents/BTGS-Qt.app/Contents/MacOS/BTGS-Qt"
           cp src/qt/res/icons/bitcoin.icns "dmg_contents/BTGS-Qt.app/Contents/Resources/btgs.icns"
-          cat > "dmg_contents/BTGS-Qt.app/Contents/Info.plist" << 'PLIST'
+          cat > "dmg_contents/BTGS-Qt.app/Contents/Info.plist" << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -294,9 +289,9 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>30.2.1</string>
+              <string>${VERSION}</string>
               <key>CFBundleVersion</key>
-              <string>30.2.1</string>
+              <string>${VERSION}</string>
               <key>LSMinimumSystemVersion</key>
               <string>11.0</string>
               <key>NSHighResolutionCapable</key>
@@ -305,7 +300,7 @@ jobs:
           </plist>
           PLIST
 
-          rm -f "release/btgs-${VERSION}-aarch64-apple-darwin.dmg"
+          rm -f "release/btgs-aarch64-apple-darwin.dmg"
           create-dmg \
             --volname "BTGS Core" \
             --volicon "src/qt/res/icons/bitcoin.icns" \
@@ -314,19 +309,19 @@ jobs:
             --icon-size 100 \
             --icon "BTGS-Qt.app" 150 185 \
             --app-drop-link 450 185 \
-            "release/btgs-${VERSION}-aarch64-apple-darwin.dmg" \
+            "release/btgs-aarch64-apple-darwin.dmg" \
             "dmg_contents/"
 
       - name: Upload macOS tar.gz
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: btgs-${{ env.VERSION }}-aarch64-apple-darwin-tar
-          path: release/btgs-${{ env.VERSION }}-aarch64-apple-darwin.tar.gz
+          name: btgs-aarch64-apple-darwin-tar
+          path: release/btgs-aarch64-apple-darwin.tar.gz
           retention-days: 14
 
       - name: Upload macOS DMG
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: btgs-${{ env.VERSION }}-aarch64-apple-darwin-dmg
-          path: release/btgs-${{ env.VERSION }}-aarch64-apple-darwin.dmg
+          name: btgs-aarch64-apple-darwin-dmg
+          path: release/btgs-aarch64-apple-darwin.dmg
           retention-days: 14
