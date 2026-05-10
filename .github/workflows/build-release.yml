@@ -56,7 +56,7 @@ jobs:
             btgs-depends-linux-${{ matrix.host }}-
 
       - name: Build depends
-        run: make -C depends HOST=${{ matrix.host }} -j${MAKEJOBS}
+        run: make -C depends HOST=${{ matrix.host }} JOBS=${MAKEJOBS} -j${MAKEJOBS}
 
       - name: Configure BTGS
         run: |
@@ -97,7 +97,7 @@ jobs:
           }
 
           copy_optional bitcoin btgs
-          copy_optional bitcoin-qt btgs-qt
+          copy_required bitcoin-qt btgs-qt
           copy_required bitcoind btgsd
           copy_required bitcoin-cli btgs-cli
           copy_required bitcoin-tx btgs-tx
@@ -149,7 +149,7 @@ jobs:
             btgs-depends-windows-x86_64-w64-mingw32-
 
       - name: Build depends
-        run: make -C depends HOST=x86_64-w64-mingw32 -j${MAKEJOBS}
+        run: make -C depends HOST=x86_64-w64-mingw32 JOBS=${MAKEJOBS} -j${MAKEJOBS}
 
       - name: Configure BTGS
         run: |
@@ -211,7 +211,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install automake libtool pkg-config cmake create-dmg
+        run: |
+          brew install automake libtool pkg-config cmake create-dmg llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
       - name: Cache depends
         uses: actions/cache@v4
@@ -225,7 +227,7 @@ jobs:
             btgs-depends-macos-aarch64-apple-darwin-
 
       - name: Build depends
-        run: make -C depends HOST=aarch64-apple-darwin -j${MAKEJOBS}
+        run: make -C depends HOST=aarch64-apple-darwin JOBS=${MAKEJOBS} -j${MAKEJOBS}
 
       - name: Configure BTGS
         run: |
