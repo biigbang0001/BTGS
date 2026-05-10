@@ -76,6 +76,11 @@ jobs:
           grep -Fq 'InstallDir $PROGRAMFILES64\BTGS' share/setup.nsi.in
           grep -Fq 'set(CLIENT_TARNAME "btgs")' cmake/module/GenerateSetupNsi.cmake
 
+          if grep -Fq 'Bitcoin Core (testnet' share/setup.nsi.in; then
+            echo "Legacy Bitcoin Core installer cleanup remains" >&2
+            exit 1
+          fi
+
           if grep -R -nE 'Bitcoin Core Security Policy|bitcoincore\.org|bitcoin\.stackexchange\.com|GUI-related pull requests should be opened against' .github/ISSUE_TEMPLATE .github/PULL_REQUEST_TEMPLATE.md; then
             echo "Bitcoin Core GitHub metadata remains in .github" >&2
             exit 1

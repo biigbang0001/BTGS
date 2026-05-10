@@ -40,7 +40,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y             build-essential automake bison bsdmainutils cmake curl git libtool             pkgconf python3 tar unzip zip ${{ matrix.packages }}
+          sudo apt-get install -y \
+            build-essential automake bison bsdmainutils cmake curl git libtool \
+            pkgconf python3 tar unzip zip ${{ matrix.packages }}
 
       - name: Cache depends
         uses: actions/cache@v4
@@ -58,7 +60,17 @@ jobs:
 
       - name: Configure BTGS
         run: |
-          cmake -B build-${{ matrix.artifact }} --toolchain depends/${{ matrix.host }}/toolchain.cmake             -DCMAKE_BUILD_TYPE=Release             -DBUILD_GUI=ON             -DBUILD_GUI_TESTS=OFF             -DBUILD_TESTS=OFF             -DBUILD_BENCH=OFF             -DBUILD_TX=ON             -DBUILD_UTIL=ON             -DBUILD_WALLET_TOOL=ON             -DENABLE_IPC=OFF             -DREDUCE_EXPORTS=ON
+          cmake -B build-${{ matrix.artifact }} --toolchain depends/${{ matrix.host }}/toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_GUI=ON \
+            -DBUILD_GUI_TESTS=OFF \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCH=OFF \
+            -DBUILD_TX=ON \
+            -DBUILD_UTIL=ON \
+            -DBUILD_WALLET_TOOL=ON \
+            -DENABLE_IPC=OFF \
+            -DREDUCE_EXPORTS=ON
 
       - name: Build BTGS
         run: cmake --build build-${{ matrix.artifact }} -j${MAKEJOBS}
@@ -119,7 +131,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y             build-essential automake bison bsdmainutils cmake curl git libtool             g++-mingw-w64-x86-64-posix nsis pkgconf python3 tar unzip zip
+          sudo apt-get install -y \
+            build-essential automake bison bsdmainutils cmake curl git libtool \
+            g++-mingw-w64-x86-64-posix nsis pkgconf python3 tar unzip zip
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 
@@ -139,7 +153,18 @@ jobs:
 
       - name: Configure BTGS
         run: |
-          cmake -B build-win64 --toolchain depends/x86_64-w64-mingw32/toolchain.cmake             -DCMAKE_BUILD_TYPE=Release             -DBUILD_GUI=ON             -DBUILD_GUI_TESTS=OFF             -DBUILD_TESTS=OFF             -DBUILD_BENCH=OFF             -DBUILD_TX=ON             -DBUILD_UTIL=ON             -DBUILD_WALLET_TOOL=ON             -DENABLE_IPC=OFF             -DREDUCE_EXPORTS=ON             -DCMAKE_CXX_FLAGS='-Wno-error=maybe-uninitialized'
+          cmake -B build-win64 --toolchain depends/x86_64-w64-mingw32/toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_GUI=ON \
+            -DBUILD_GUI_TESTS=OFF \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCH=OFF \
+            -DBUILD_TX=ON \
+            -DBUILD_UTIL=ON \
+            -DBUILD_WALLET_TOOL=ON \
+            -DENABLE_IPC=OFF \
+            -DREDUCE_EXPORTS=ON \
+            -DCMAKE_CXX_FLAGS='-Wno-error=maybe-uninitialized'
 
       - name: Build BTGS
         run: cmake --build build-win64 -j${MAKEJOBS}
@@ -204,7 +229,17 @@ jobs:
 
       - name: Configure BTGS
         run: |
-          cmake -B build-macos --toolchain depends/aarch64-apple-darwin/toolchain.cmake             -DCMAKE_BUILD_TYPE=Release             -DBUILD_GUI=ON             -DBUILD_GUI_TESTS=OFF             -DBUILD_TESTS=OFF             -DBUILD_BENCH=OFF             -DBUILD_TX=ON             -DBUILD_UTIL=ON             -DBUILD_WALLET_TOOL=ON             -DENABLE_IPC=OFF             -DREDUCE_EXPORTS=ON
+          cmake -B build-macos --toolchain depends/aarch64-apple-darwin/toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_GUI=ON \
+            -DBUILD_GUI_TESTS=OFF \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCH=OFF \
+            -DBUILD_TX=ON \
+            -DBUILD_UTIL=ON \
+            -DBUILD_WALLET_TOOL=ON \
+            -DENABLE_IPC=OFF \
+            -DREDUCE_EXPORTS=ON
 
       - name: Build BTGS
         run: cmake --build build-macos -j${MAKEJOBS}
@@ -269,7 +304,16 @@ jobs:
           PLIST
 
           rm -f "release/btgs-${VERSION}-aarch64-apple-darwin.dmg"
-          create-dmg             --volname "BTGS Core"             --volicon "src/qt/res/icons/bitcoin.icns"             --window-pos 200 120             --window-size 600 400             --icon-size 100             --icon "BTGS-Qt.app" 150 185             --app-drop-link 450 185             "release/btgs-${VERSION}-aarch64-apple-darwin.dmg"             "dmg_contents/"
+          create-dmg \
+            --volname "BTGS Core" \
+            --volicon "src/qt/res/icons/bitcoin.icns" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "BTGS-Qt.app" 150 185 \
+            --app-drop-link 450 185 \
+            "release/btgs-${VERSION}-aarch64-apple-darwin.dmg" \
+            "dmg_contents/"
 
       - name: Upload macOS tar.gz
         uses: actions/upload-artifact@v4
